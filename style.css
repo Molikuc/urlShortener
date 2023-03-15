@@ -1,3 +1,15 @@
 * {
   box-sizing: border-box;
 }
+
+#copyClip:before {
+  content: "";
+  position: absolute;
+  top: -20px;
+  left: 33%;
+  transform: translateX(-50%);
+  border-top: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 10px solid white;
+  border-left: 10px solid transparent;
+}
