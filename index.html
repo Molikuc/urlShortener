@@ -46,12 +46,6 @@
         </button>
       </div>
       <div class="flex justify-center">
-        <!-- <a
-          class="hidden text-3xl m-4 bg-slate-100 rounded-lg p-6 hover:text-red-400 active:text-green-500"
-          href=""
-          id="shortUrl"
-          target="_blank"
-        ></a> -->
         <div class="relative">
           <p
             class="text-3xl m-4 bg-slate-100 rounded-lg p-6 cursor-pointer hover:text-red-400 active:text-green-500 hidden"
@@ -64,33 +58,74 @@
           >
         </div>
       </div>
+
+      <div id="test"></div>
+      <div>
+        <h2>Your short URL</h2>
+        <ul id="storage"></ul>
+      </div>
     </main>
     <script>
-      const URL = document.getElementById("URL");
+      const url = document.getElementById("URL");
       const copyClip = document.getElementById("copyClip");
 
-      URL.addEventListener("keypress", (e) => {
+      // function to modify the url and always get an URL without https:// inside the localStorage
+      function normalizeUrl(url) {
+        url = url.replace(/^(https:\/\/)?/, "");
+        url = url.replace(/^www\./, "");
+        if (url.endsWith("/")) {
+          url = url.slice(0, -1);
+        }
+        return url;
+      }
+
+      //when you press 'Enter' it check if the URL was already use in the localStorage if not it create a new one.
+      url.addEventListener("keypress", (e) => {
         if (e.key === "Enter") {
-          if (URL.value === "") {
+          if (url.value === "") {
             return;
           } else {
-            getUrl();
+            if (localStorage.hasOwnProperty(normalizeUrl(url.value))) {
+              console.log("exist");
+            } else {
+              getUrl();
+            }
           }
         }
       });
 
+      // display the URL already inside localStorage
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        const value = localStorage.getItem(key);
+        if (value.startsWith("shrtco.de")) {
+          const listItem = document.createElement("li");
+          listItem.innerText = value;
+          document.getElementById("storage").appendChild(listItem);
+        }
+      }
+
+      //function to create the URL, it call the API to create the short URL, add to the list in display, if clicked display the 'copied to clipboard'
       const getUrl = async () => {
         try {
           const reponse = await fetch(
-            `https://api.shrtco.de/v2/shorten?url=${URL.value}`
+            `https://api.shrtco.de/v2/shorten?url=${url.value}`
           );
           const data = await reponse.json();
+
+          localStorage.setItem(normalizeUrl(url.value), data.result.short_link);
+
           document.getElementById("shortUrl").innerHTML =
             data.result.short_link;
           document
             .getElementById("shortUrl")
             .setAttribute("href", `https://${data.result.short_link}`);
           document.getElementById("shortUrl").classList.remove("hidden");
+
+          const addItem = document.createElement("li");
+          addItem.innerText = data.result.short_link;
+          document.getElementById("storage").appendChild(addItem);
+
           document.getElementById("shortUrl").addEventListener("click", () => {
             navigator.clipboard.writeText(data.result.short_link);
             copyClip.classList.add("opacity-100");
