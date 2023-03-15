@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css" />
+    <title>URL Shortener</title>
+  </head>
+  <body class="bg-gradient-to-r from-sky-500 to-indigo-500">
+    <h1 class="text-5xl text-center m-4">Welcome to the URL Shortener</h1>
+
+    <main>
+      <form class="flex justify-center m-6" onsubmit="event.preventDefault();">
+        <div class="grid gap-3 w-screen">
+          <label class="pr-5 text-2xl place-self-center"
+            >Enter your URL :</label
+          >
+          <input
+            class="rounded-md place-self-center text-2xl p-4 w-9/12 shadow-lg"
+            type="text"
+            name="URL"
+            id="URL"
+            required
+          />
+        </div>
+      </form>
+      <div class="flex justify-center">
+        <button
+          class="border-2 rounded-lg p-4 bg-teal-50 shadow-lg hover:bg-slate-300 active:text-white"
+          onclick="getUrl()"
+        >
+          Short your URL
+        </button>
+      </div>
+      <div class="flex justify-center">
+        <a
+          class="hidden text-3xl m-4 bg-slate-100 rounded-lg p-6 hover:text-red-400 active:text-green-500"
+          href=""
+          id="shortUrl"
+          target="_blank"
+        ></a>
+      </div>
+    </main>
+    <script>
+      const URL = document.getElementById("URL");
+      URL.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          if (URL.value === "") {
+            return;
+          } else {
+            getUrl();
+          }
+        }
+      });
+      const getUrl = async () => {
+        try {
+          const reponse = await fetch(
+            `https://api.shrtco.de/v2/shorten?url=${URL.value}`
+          );
+          const data = await reponse.json();
+          document.getElementById("shortUrl").innerHTML =
+            data.result.short_link;
+          document
+            .getElementById("shortUrl")
+            .setAttribute("href", `https://${data.result.short_link}`);
+          document.getElementById("shortUrl").classList.remove("hidden");
+        } catch (error) {
+          console.error("Error fetching data", error);
+        }
+      };
+    </script>
+  </body>
+</html>
