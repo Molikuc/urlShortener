@@ -22,7 +22,7 @@
   <body class="bg-gradient-to-r from-sky-500 to-indigo-500">
     <h1 class="text-5xl text-center m-4">Welcome to the URL Shortener</h1>
 
-    <main>
+    <main class="grid grid-cols-1">
       <form class="flex justify-center m-6" onsubmit="event.preventDefault();">
         <div class="grid gap-3 w-screen">
           <label class="pr-5 text-2xl place-self-center"
@@ -39,8 +39,8 @@
       </form>
       <div class="flex justify-center">
         <button
+          id="btnClick"
           class="border-2 rounded-lg p-4 bg-teal-50 shadow-lg hover:bg-slate-300 active:text-white"
-          onclick="getUrl()"
         >
           Short your URL
         </button>
@@ -48,7 +48,7 @@
       <div class="flex justify-center">
         <div class="relative">
           <p
-            class="text-3xl m-4 bg-slate-100 rounded-lg p-6 cursor-pointer hover:text-red-400 active:text-green-500 hidden"
+            class="text-3xl m-4 bg-slate-100 rounded-lg p-6 cursor-pointer hover:text-red-400 active:text-green-500 opacity-0"
             id="shortUrl"
           ></p>
           <span
@@ -56,18 +56,25 @@
             id="copyClip"
             >Copied to Clipboard</span
           >
+          <span
+            class="absolute top-95 left-1/2 w-2/5 px-4 py-2 bg-gray-100 rounded shadow-md opacity-0 transition-opacity ease-in"
+            id="alreadyShort"
+            >Already Short</span
+          >
         </div>
       </div>
-
-      <div id="test"></div>
-      <div>
-        <h2>Your short URL</h2>
-        <ul id="storage"></ul>
+      <div
+        class="bg-slate-100 rounded-lg w-3/4 grid gap-3 place-self-center p-6 my-11 text-center"
+      >
+        <h2 class="text-4xl">Your short URL</h2>
+        <div id="listDisplay" class="grid gap-2"></div>
       </div>
     </main>
     <script>
       const url = document.getElementById("URL");
       const copyClip = document.getElementById("copyClip");
+      const alreadyShort = document.getElementById("alreadyShort");
+      const btnShort = document.getElementById("btnClick");
 
       // function to modify the url and always get an URL without https:// inside the localStorage
       function normalizeUrl(url) {
@@ -79,31 +86,75 @@
         return url;
       }
 
-      //when you press 'Enter' it check if the URL was already use in the localStorage if not it create a new one.
       url.addEventListener("keypress", (e) => {
         if (e.key === "Enter") {
-          if (url.value === "") {
-            return;
-          } else {
-            if (localStorage.hasOwnProperty(normalizeUrl(url.value))) {
-              console.log("exist");
-            } else {
-              getUrl();
-            }
-          }
+          handleInput();
         }
       });
+
+      btnShort.addEventListener("click", () => {
+        handleInput();
+      });
+
+      //if the URL is already in the localStorage it will not short it and will alert the user.
+      const handleInput = () => {
+        if (url.value === "") {
+          return;
+        } else {
+          if (localStorage.hasOwnProperty(normalizeUrl(url.value))) {
+            alreadyShort.classList.add("opacity-100");
+            setTimeout(() => {
+              alreadyShort.classList.remove("opacity-100");
+              alreadyShort.classList.add("opacity-0");
+            }, 3000);
+          } else {
+            getUrl();
+          }
+        }
+      };
 
       // display the URL already inside localStorage
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         const value = localStorage.getItem(key);
         if (value.startsWith("shrtco.de")) {
-          const listItem = document.createElement("li");
-          listItem.innerText = value;
-          document.getElementById("storage").appendChild(listItem);
+          const div = document.createElement("div");
+          div.classList.add("grid", "grid-cols-2", "gap-x-5");
+          document.getElementById("listDisplay").appendChild(div);
+          const listItemKey = document.createElement("p");
+          listItemKey.classList.add("text-xl");
+          if (key.length >= 20) {
+            listItemKey.classList.add("truncate");
+            listItemKey.innerText = key;
+            div.appendChild(listItemKey);
+          } else {
+            listItemKey.innerText = key;
+            div.appendChild(listItemKey);
+          }
+          const listItemValue = document.createElement("p");
+          listItemValue.classList.add(
+            "cursor-pointer",
+            "truncate",
+            "shortUrlClick",
+            "text-xl",
+            "hover:text-red-500",
+            "active:text-purple-700"
+          );
+          listItemValue.innerText = value;
+          div.appendChild(listItemValue);
         }
       }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const listDisplay = document.getElementById("listDisplay");
+
+        listDisplay.addEventListener("click", (e) => {
+          if (e.target.classList.contains("shortUrlClick")) {
+            const shortUrl = e.target.textContent;
+            navigator.clipboard.writeText(shortUrl);
+          }
+        });
+      });
 
       //function to create the URL, it call the API to create the short URL, add to the list in display, if clicked display the 'copied to clipboard'
       const getUrl = async () => {
@@ -120,11 +171,28 @@
           document
             .getElementById("shortUrl")
             .setAttribute("href", `https://${data.result.short_link}`);
-          document.getElementById("shortUrl").classList.remove("hidden");
+          document.getElementById("shortUrl").classList.remove("opacity-0");
 
-          const addItem = document.createElement("li");
-          addItem.innerText = data.result.short_link;
-          document.getElementById("storage").appendChild(addItem);
+          const addItem = document.createElement("div");
+          addItem.classList.add("grid", "grid-cols-2", "gap-x-5");
+          document.getElementById("listDisplay").appendChild(addItem);
+          const listItemKey = document.createElement("p");
+          if (normalizeUrl(url.value).length >= 20) {
+            listItemKey.classList.add("truncate");
+            listItemKey.innerText = normalizeUrl(url.value);
+            addItem.appendChild(listItemKey);
+          } else {
+            listItemKey.innerText = normalizeUrl(url.value);
+            addItem.appendChild(listItemKey);
+          }
+          const listItemValue = document.createElement("p");
+          listItemValue.classList.add(
+            "cursor-pointer",
+            "truncate",
+            "shortUrlClick"
+          );
+          listItemValue.innerText = data.result.short_link;
+          addItem.appendChild(listItemValue);
 
           document.getElementById("shortUrl").addEventListener("click", () => {
             navigator.clipboard.writeText(data.result.short_link);
